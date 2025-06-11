@@ -12,6 +12,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from .serializers import UserSignupSerializer
 from rest_framework.views import APIView
+from django.conf import settings
+import os
 
 
 @api_view(['POST'])
@@ -124,7 +126,20 @@ def update_profile_api_view(request):
     user.phone_number = new_phone
 
     if 'profile_picture' in request.FILES and request.FILES['profile_picture']:
-        user.profile_picture = request.FILES['profile_picture']
+        # Delete old file if exists
+        if user.profile_picture and hasattr(user.profile_picture, 'path') and os.path.isfile(user.profile_picture.path):
+            try:
+                os.remove(user.profile_picture.path)
+            except Exception:
+                pass
+
+        # Rename new file
+        uploaded_file = request.FILES['profile_picture']
+        ext = os.path.splitext(uploaded_file.name)[1] or ".jpg"
+        new_filename = f"user_{user.pk}{ext}"
+        uploaded_file.name = new_filename
+        user.profile_picture = uploaded_file
+
     user.save()
     return Response({
         'message': 'Profile updated successfully.',

@@ -198,3 +198,5 @@ cython_debug/
 notes.txt
 todo.txt
 constants.py
+
+media/profile_pictures/*
