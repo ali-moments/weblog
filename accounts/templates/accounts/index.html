@@ -2,59 +2,11 @@
 <html>
 <head>
     <title>Welcome</title>
-    <script>
-        function handleLogin() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            fetch('/accounts/login/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })  // Send email and password as JSON
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.access) {
-                    localStorage.setItem('access', data.access);  // Store JWT access token
-                    localStorage.setItem('refresh', data.refresh);  // Store JWT refresh token
-                    window.location.href = data.redirect_url;  // Redirect to dashboard
-                } else {
-                    console.error(data.error || 'Login failed.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error.message);
-            });
-        }
-
-        function fetchDashboard() {
-            const token = localStorage.getItem('access');
-            fetch('/accounts/dashboard/', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (response.status === 401) {
-                    alert('Unauthorized. Please log in again.');
-                    window.location.href = '/accounts/login/';
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log(data);
-            });
-        }
-    </script>
 </head>
 <body>
     <h2>Welcome to Sarafy</h2>
-    <label for="email">Email:</label>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="handleLogin()">Login</button>
-    <p>Don't have an account? <a href="/accounts/signup/">Signup here</a></p>
+    <a href="/accounts/login/">Login</a>
+    <br>
+    <a href="/accounts/signup/">Signup</a>
 </body>
 </html>

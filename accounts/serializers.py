@@ -25,10 +25,8 @@ class UserSignupSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         referral_code = validated_data.pop('referral_code', None)
 
-        user = Users.objects.create(**validated_data)
-        user.set_password(password)  # Hash the password
-        user.save()
-
+        user = Users.objects.create_user(password=password, **validated_data)
+        
         if referral_code:
             referrer = Users.objects.filter(referral_code=referral_code).first()
             if referrer:

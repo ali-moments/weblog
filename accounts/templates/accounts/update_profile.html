@@ -5,15 +5,71 @@
 </head>
 <body>
     <h2>Update Profile</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+    <form id="updateProfileForm" enctype="multipart/form-data">
         <label for="username">Username:</label>
-        <input type="text" name="username" value="{{ request.user.username }}"><br>
+        <input type="text" name="username" id="username"><br>
         <label for="phone_number">Phone Number:</label>
-        <input type="text" name="phone_number" value="{{ request.user.phone_number }}"><br>
+        <input type="text" name="phone_number" id="phone_number"><br>
         <label for="profile_picture">Profile Picture:</label>
-        <input type="file" name="profile_picture"><br>
+        <input type="file" name="profile_picture" id="profile_picture"><br>
         <button type="submit">Update</button>
     </form>
+    <p id="updateMsg"></p>
+    <script>
+    // Load current user data into the form
+    document.addEventListener('DOMContentLoaded', function () {
+        const token = localStorage.getItem('access');
+        if (!token) {
+            window.location.href = '/accounts/login/';
+            return;
+        }
+        fetch('/accounts/api/dashboard/', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data) {
+                document.getElementById('username').value = data.username || '';
+                document.getElementById('phone_number').value = data.phone_number || '';
+            }
+        });
+    });
+
+    document.getElementById('updateProfileForm').onsubmit = function(event) {
+        event.preventDefault();
+        const token = localStorage.getItem('access');
+        if (!token) {
+            window.location.href = '/accounts/login/';
+            return;
+        }
+        const form = document.getElementById('updateProfileForm');
+        const formData = new FormData(form);
+
+        fetch('/accounts/api/update_profile/', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        })
+        .then(response => response.json().then(data => ({status: response.status, data})))
+        .then(({status, data}) => {
+            if (data.message) {
+                window.location.href = '/accounts/dashboard/';
+            } else if (data.detail) {
+                document.getElementById('updateMsg').textContent = data.detail;
+                if (status === 401) {
+                    window.location.href = '/accounts/login/';
+                }
+            } else {
+                document.getElementById('updateMsg').textContent = 'Update failed.';
+            }
+        });
+    };
+    </script>
 </body>
 </html>

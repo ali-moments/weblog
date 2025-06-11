@@ -17,9 +17,12 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(username, email, password, **extra_fields)
 
 class Users(AbstractBaseUser, PermissionsMixin):
+    """
+    Custom user model for Sarafy.
+    """
     username = models.CharField(max_length=200, unique=True)
     email = models.EmailField(max_length=200, unique=True)
-    password = models.CharField(max_length=300)
+    # password field is inherited from AbstractBaseUser
     referral_code = models.CharField(max_length=100, blank=True, null=True)
     referred_by = models.ForeignKey(
         'self', on_delete=models.SET_NULL, blank=True, null=True, related_name='referrals'

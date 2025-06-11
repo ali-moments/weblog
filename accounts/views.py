@@ -2,16 +2,22 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import permission_classes
-from django.http import JsonResponse
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import permission_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import status
 from .serializers import UserSignupSerializer
+from rest_framework.views import APIView
+
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def signup_view(request):
+    """API endpoint for user signup."""
     data = request.data
     serializer = UserSignupSerializer(data=data)
     if serializer.is_valid():
@@ -27,6 +33,7 @@ def signup_view(request):
     return Response({'errors': serializer.errors}, status=400)
 
 def signup_page_view(request):
+    """Render signup page or handle signup POST."""
     if request.method == 'GET':
         return render(request, 'accounts/signup.html')
     elif request.method == 'POST':
@@ -37,29 +44,57 @@ def signup_page_view(request):
             return redirect('dashboard')  # Redirect to dashboard after signup
         return render(request, 'accounts/signup.html', {'errors': serializer.errors})
 
+def login_page_view(request):
+    """Render login page for GET requests."""
+    if request.method == 'GET':
+        return render(request, 'accounts/login.html')
+
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
+    """API endpoint for user login (JWT)."""
     data = request.data
     email = data.get('email', '').strip()
     password = data.get('password', '').strip()
-    User = get_user_model()
-    user = User.objects.filter(email=email).first()
 
-    if user and user.check_password(password):  # Validate user credentials
+    user = authenticate(request, email=email, password=password)
+
+    if user:
         if user.is_active:
             refresh = RefreshToken.for_user(user)
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'redirect_url': '/accounts/dashboard/',  # Include redirect URL
+                'redirect_url': '/accounts/dashboard/',
                 'message': 'Login successful. Redirecting to dashboard...'
             }, status=200)
         return Response({'error': 'Your account is inactive.'}, status=403)
-    return Response({'error': 'Invalid email or password. Please check your credentials.'}, status=401)  # Changed to 401
+    return Response({'error': 'Invalid email or password. Please check your credentials.'}, status=401)
+
+class CustomLoginAPIView(APIView):
+    """Custom API view for login with JWT."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip()
+        password = request.data.get('password', '').strip()
+        user = authenticate(request, email=email, password=password)
+        if user:
+            if user.is_active:
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                    'redirect_url': '/accounts/dashboard/',
+                    'message': 'Login successful. Redirecting to dashboard...'
+                }, status=200)
+            return Response({'error': 'Your account is inactive.'}, status=403)
+        return Response({'error': 'Invalid email or password. Please check your credentials.'}, status=401)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def dashboard_view(request):
+def dashboard_api_view(request):
+    """JWT-protected API for user dashboard data."""
     user = request.user
     return Response({
         'username': user.username,
@@ -68,21 +103,46 @@ def dashboard_view(request):
         'profile_picture': user.profile_picture.url if user.profile_picture else None
     })
 
-@login_required
-def update_profile_view(request):
-    if request.method == 'POST':
-        user = request.user
-        user.username = request.POST.get('username', user.username)
-        user.phone_number = request.POST.get('phone_number', user.phone_number)
-        if 'profile_picture' in request.FILES:
-            user.profile_picture = request.FILES['profile_picture']
-        user.save()
-        messages.success(request, "Profile updated successfully.")
-        return redirect('dashboard')
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def update_profile_api_view(request):
+    """JWT-protected API for updating user profile."""
+    user = request.user
+    data = request.data
 
+    new_username = data.get('username', '').strip() or user.username
+    new_phone = data.get('phone_number', '').strip() or user.phone_number
+
+    # Only check for username uniqueness if changed
+    if new_username != user.username:
+        from .models import Users
+        if Users.objects.filter(username=new_username).exclude(pk=user.pk).exists():
+            return Response({'detail': 'This username is already taken.'}, status=400)
+        user.username = new_username
+
+    user.phone_number = new_phone
+
+    if 'profile_picture' in request.FILES and request.FILES['profile_picture']:
+        user.profile_picture = request.FILES['profile_picture']
+    user.save()
+    return Response({
+        'message': 'Profile updated successfully.',
+        'username': user.username,
+        'phone_number': user.phone_number,
+        'profile_picture': user.profile_picture.url if user.profile_picture else None
+    }, status=status.HTTP_200_OK)
+
+def dashboard_view(request):
+    """Render dashboard page (data loaded via JWT API)."""
+    return render(request, 'accounts/dashboard.html')
+
+def update_profile_view(request):
+    """Render update profile page (actual update should be via JWT API)."""
     return render(request, 'accounts/update_profile.html')
 
 def index_view(request):
+    """Landing page view."""
     if request.user.is_authenticated:
         return redirect('dashboard')  # Redirect to dashboard if logged in
     return render(request, 'accounts/index.html')  # Render index page

@@ -7,16 +7,18 @@
     <h2>Welcome, {{ request.user.username }}</h2>
     <p class="email">Email: {{ request.user.email }}</p>
     <p class="phone">Phone Number: {{ request.user.phone_number }}</p>
-    {% if request.user.profile_picture %}
-        <img src="{{ request.user.profile_picture.url }}" alt="Profile Picture" width="150" height="150">
-    {% else %}
-        <p>No profile picture uploaded.</p>
-    {% endif %}
+    <div id="profile-picture-container">
+        <!-- Profile picture will be loaded by JS -->
+    </div>
     <a href="{% url 'update_profile' %}">Update Profile</a>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const token = localStorage.getItem('access');
-            fetch('/accounts/dashboard/', {
+            if (!token) {
+                window.location.href = '/accounts/login/';
+                return;
+            }
+            fetch('/accounts/api/dashboard/', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -34,8 +36,17 @@
                     document.querySelector('h2').textContent = `Welcome, ${data.username}`;
                     document.querySelector('p.email').textContent = `Email: ${data.email}`;
                     document.querySelector('p.phone').textContent = `Phone Number: ${data.phone_number}`;
+                    const container = document.getElementById('profile-picture-container');
+                    container.innerHTML = '';
                     if (data.profile_picture) {
-                        document.querySelector('img').src = data.profile_picture;
+                        const img = document.createElement('img');
+                        img.src = data.profile_picture;
+                        img.alt = "Profile Picture";
+                        img.width = 150;
+                        img.height = 150;
+                        container.appendChild(img);
+                    } else {
+                        container.textContent = 'No profile picture uploaded.';
                     }
                 }
             });

@@ -5,13 +5,44 @@
 </head>
 <body>
     <h2>Login</h2>
-    <form method="post">
-        {% csrf_token %}
+    <form id="loginForm" onsubmit="event.preventDefault(); submitLogin();">
         <label for="email">Email:</label>
-        <input type="email" name="email" required><br>
+        <input type="email" name="email" id="email" required><br>
         <label for="password">Password:</label>
-        <input type="password" name="password" required><br>
+        <input type="password" name="password" id="password" required><br>
         <button type="submit">Login</button>
     </form>
+    
+    <script>
+    // Clear any old tokens on login page load
+    localStorage.removeItem('access');
+    localStorage.removeItem('refresh');
+
+    function submitLogin() {
+        const formData = {
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+        };
+        
+        fetch('/accounts/api/login/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.access) {
+                // Store tokens and redirect
+                localStorage.setItem('access', data.access);
+                localStorage.setItem('refresh', data.refresh);
+                window.location.href = data.redirect_url;
+            } else {
+                alert(data.error || 'Login failed');
+            }
+        });
+    }
+    </script>
 </body>
 </html>
