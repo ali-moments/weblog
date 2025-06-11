@@ -4,26 +4,34 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import Users
+from .serializers import UserSignupSerializer  # Import the serializer
 
 def signup_view(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        email = request.POST['email']
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
+        data = {
+            'username': request.POST.get('username', '').strip(),
+            'email': request.POST.get('email', '').strip(),
+            'password': request.POST.get('password', '').strip(),
+            'confirm_password': request.POST.get('confirm_password', '').strip(),
+            'referral_code': request.POST.get('referral_code', '').strip()  # New field for referral code
+        }
 
-        if password != confirm_password:
+        if data['password'] != data['confirm_password']:
             messages.error(request, "Passwords do not match.")
             return redirect('signup')
 
-        if User.objects.filter(username=username).exists():
+        if User.objects.filter(username=data['username']).exists():
             messages.error(request, "Username already exists.")
             return redirect('signup')
 
-        user = User.objects.create_user(username=username, email=email, password=password)
-        user.save()
-        messages.success(request, "Account created successfully.")
-        return redirect('login')
+        serializer = UserSignupSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            messages.success(request, "Account created successfully.")
+            return redirect('login')
+        else:
+            messages.error(request, "Error creating account: " + str(serializer.errors))
+            return redirect('signup')
 
     return render(request, 'accounts/signup.html')
 
