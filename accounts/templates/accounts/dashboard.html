@@ -11,6 +11,7 @@
         <!-- Profile picture will be loaded by JS -->
     </div>
     <a href="{% url 'update_profile' %}">Update Profile</a>
+    <button id="signout-btn" style="margin-left:20px;">Sign Out</button>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const token = localStorage.getItem('access');
@@ -50,6 +51,13 @@
                     }
                 }
             });
+
+            // Sign out logic
+            document.getElementById('signout-btn').onclick = function() {
+                localStorage.removeItem('access');
+                localStorage.removeItem('refresh');
+                window.location.href = '/accounts/login/';
+            };
         });
     </script>
 </body>
