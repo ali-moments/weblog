@@ -18,8 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from accounts.views import index_view  # Import the index view
 
 urlpatterns = [
+    path('', index_view, name='index'),  # Root URL serves index_view
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),  # Include accounts app URLs
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

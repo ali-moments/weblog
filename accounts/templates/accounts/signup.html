@@ -19,5 +19,12 @@
         <input type="text" name="referral_code"><br>
         <button type="submit">Signup</button>
     </form>
+    {% if errors %}
+        <ul>
+            {% for field, error_list in errors.items %}
+                <li>{{ field }}: {{ error_list|join:", " }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 </body>
 </html>
