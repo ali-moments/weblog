@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h2>Welcome, {{ request.user.username }}</h2>
+    <p>Email: {{ request.user.email }}</p>
+    <p>Phone Number: {{ request.user.phone_number }}</p>
+    {% if request.user.profile_picture %}
+        <img src="{{ request.user.profile_picture.url }}" alt="Profile Picture" width="150" height="150">
+    {% else %}
+        <p>No profile picture uploaded.</p>
+    {% endif %}
+    <a href="{% url 'update_profile' %}">Update Profile</a>
+</body>
+</html>

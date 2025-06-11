@@ -7,7 +7,7 @@ class UserSignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ['username', 'email', 'password', 'referral_code']
+        fields = ['email', 'password', 'referral_code']
 
     def create(self, validated_data):
         # Extract referral code if provided
@@ -15,7 +15,6 @@ class UserSignupSerializer(serializers.ModelSerializer):
 
         # Create the user
         user = Users.objects.create(
-            username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password']
         )

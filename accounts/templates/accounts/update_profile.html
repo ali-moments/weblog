@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Profile</title>
+</head>
+<body>
+    <h2>Update Profile</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="username">Username:</label>
+        <input type="text" name="username" value="{{ request.user.username }}"><br>
+        <label for="phone_number">Phone Number:</label>
+        <input type="text" name="phone_number" value="{{ request.user.phone_number }}"><br>
+        <label for="profile_picture">Profile Picture:</label>
+        <input type="file" name="profile_picture"><br>
+        <button type="submit">Update</button>
+    </form>
+</body>
+</html>

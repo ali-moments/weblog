@@ -9,3 +9,5 @@ class Users(models.Model):
     referred_by = models.ForeignKey(
         'self', on_delete=models.SET_NULL, blank=True, null=True, related_name='referrals'
     )  # Tracks who referred the user
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
